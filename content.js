@@ -54,7 +54,8 @@ function setupNotesFeature() {
         if (video) {
             const currentTime = video.currentTime;
             const formattedTime = formatTime(currentTime);
-            const timestampText = `[${formattedTime}](https://www.youtube.com/watch?v=VIDEO_ID&t=83s) `; // Added link
+            const timestampText = `[${formattedTime}] `;
+            // const timestampText = `[${formattedTime}](https://www.youtube.com/watch?v=VIDEO_ID&t=83s) `; // Added link
 
             // Insert at cursor position or at the end
             const cursorPos = notesArea.selectionStart;
@@ -76,16 +77,15 @@ function setupNotesFeature() {
         const videoTitle = document.querySelector('h1.title.style-scope.ytd-video-primary-info-renderer')?.textContent || 'YouTube Video';
         const videoUrl = window.location.href;
         const cleanTitle = videoTitle.trim().replace(/[^\w\s-]/g, '');
-        const filename = `${cleanTitle} - Notes.md`;
+        const filename = `${cleanTitle} - Notes.txt`;
 
-        let markdownContent = `# ${videoTitle}\n\n${videoUrl}\n\n${notesArea.value}`;
+        const textContent = `${videoTitle}\n${videoUrl}\n\n${notesArea.value}`;
 
-        const blob = new Blob([markdownContent], { type: 'text/markdown' });
+        const blob = new Blob([textContent], { type: 'text/plain' });
         const url = URL.createObjectURL(blob);
-
         const a = document.createElement('a');
         a.href = url;
-        a.download = filename;
+        a.download = filename; // Ensure the file has a .txt extension
         a.click();
 
         URL.revokeObjectURL(url);
@@ -129,6 +129,11 @@ function setupNotesFeature() {
         input.onchange = (event) => {
             const file = event.target.files[0];
             const reader = new FileReader();
+            reader.onload = (e) => {
+                notesArea.value = e.target.result;
+                saveNotes(notesArea.value);
+            };
+            reader.readAsText(file);
             reader.onload = (e) => {
                 notesArea.value = e.target.result;
                 saveNotes(notesArea.value);
@@ -1166,6 +1171,7 @@ function setupChaptersFeature() {
         }
 
         // Get transcript and generate chapters
+        console.log('Retrieving transcript...'); // Debug log
         const transcript = await getTranscript();
         if (transcript && transcript !== "Transcript not available" && transcript !== "Transcript not loaded") {
             const chapters = await generateChapters(transcript);
